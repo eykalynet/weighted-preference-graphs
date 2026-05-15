@@ -66,6 +66,34 @@ def asynchronous_better_response_step(
     return _choose_profile(candidates, tie_breaking, random_generator)
 
 
+def payoff_sensitive_better_response_step(
+    game: NormalFormGame,
+    profile: Profile,
+    tie_breaking: TieBreaking = "deterministic",
+    seed: int | None = None,
+    rng: Random | None = None,
+) -> Profile:
+    """Take one max-gain asynchronous better-response step.
+
+    Among all strictly improving unilateral deviations, this dynamic first
+    keeps only those with maximum payoff gain. It then applies the requested
+    tie-breaking rule.
+    """
+
+    random_generator = rng if rng is not None else Random(seed)
+    improvements = game.improving_deviations(profile)
+    if not improvements:
+        return profile
+
+    max_gain = max(gain for _player, _target, gain in improvements)
+    candidates = [
+        target
+        for _player, target, gain in improvements
+        if gain == max_gain
+    ]
+    return _choose_profile(candidates, tie_breaking, random_generator)
+
+
 def _best_response_profiles(
     game: NormalFormGame,
     profile: Profile,
