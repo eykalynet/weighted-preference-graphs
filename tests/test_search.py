@@ -1,7 +1,9 @@
 from src.search import (
     compare_games,
+    enumerate_two_by_two_graph_classes,
     find_pairs_with_different_payoff_sensitive_basins,
     find_unique_max_flip_pair,
+    format_enumeration_summary,
     format_payoff_table,
     format_unique_max_flip_comparison,
     two_by_two_games,
@@ -56,3 +58,14 @@ def test_format_unique_max_flip_comparison() -> None:
     output = format_unique_max_flip_comparison(result)
     assert "Unique max-gain flip witness" in output
     assert "Flip profile:" in output
+
+
+def test_enumerate_two_by_two_graph_classes_on_tiny_range() -> None:
+    summary = enumerate_two_by_two_graph_classes(
+        payoff_values=(0, 1),
+        max_representatives=1,
+    )
+    assert summary.total_games == 2**8
+    assert summary.distinct_unweighted_graphs > 0
+    output = format_enumeration_summary(summary)
+    assert "Number of games searched:" in output

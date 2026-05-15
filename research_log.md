@@ -175,3 +175,42 @@ Game B basin sizes:
 Possible theorem/conjecture:
 
 The unweighted preference graph, even together with the set of pure Nash equilibria, is not sufficient to determine equilibrium selection under deterministic max-gain better-response dynamics. This failure does not require tie-breaking: the unique maximum-gain improving edge can point to different sink equilibria in ordinally equivalent games.
+
+## Systematic Enumeration 1
+
+Date: 2026-05-15
+
+Game class: All two-player, two-strategy normal-form games with integer payoffs in `{-2, -1, 0, 1, 2}`.
+
+Payoff matrices:
+
+The enumeration searched all `5^8 = 390625` payoff assignments. Representative payoff matrices are recorded in Examples 1 and 2 above.
+
+Unweighted graph structure:
+
+The enumeration grouped games by their unweighted preference graph. There were `81` distinct unweighted preference graphs, matching the fact that a `2x2` game has four unilateral-adjacency pairs and each pair can be oriented one way, oriented the other way, or left unoriented.
+
+Weighted graph differences:
+
+Within each unweighted graph class, the enumeration compared deterministic max-gain better-response basin decompositions induced by the weighted edge data.
+
+Dynamics tested:
+
+Deterministic payoff-sensitive asynchronous better-response dynamics. At each profile, the dynamic chooses an improving edge of maximum payoff gain; ties are broken deterministically by profile order.
+
+What happened:
+
+Out of `81` unweighted graph-equivalence classes, `22` contained more than one deterministic max-gain basin decomposition.
+
+The varying classes were distributed by number of pure Nash sink vertices as follows:
+
+```text
+2 pure Nash sink vertices: 18 graph classes
+3 pure Nash sink vertices: 4 graph classes
+```
+
+No graph class with a unique pure Nash sink vertex exhibited multiple deterministic max-gain basin decompositions in this enumeration.
+
+Possible theorem/conjecture:
+
+For `2x2` games under deterministic max-gain better-response dynamics, variation in basin decomposition within a fixed unweighted preference graph may require multiple pure Nash sink vertices. This is currently an empirical observation for payoffs in `{-2, -1, 0, 1, 2}`, not yet a theorem.

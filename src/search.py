@@ -48,6 +48,17 @@ class UniqueMaxFlipComparison:
     second_max_target: Profile
 
 
+@dataclass(frozen=True)
+class EnumerationSummary:
+    """Summary of exhaustive 2x2 enumeration by unweighted graph class."""
+
+    total_games: int
+    distinct_unweighted_graphs: int
+    varying_dynamics_classes: int
+    varying_classes_by_sink_count: tuple[tuple[int, int], ...]
+    representative_pairs: tuple[GamePairComparison, ...]
+
+
 def two_by_two_games(
     payoff_values: Iterable[int] = (-2, -1, 0, 1, 2),
 ) -> Iterable[NormalFormGame]:
@@ -101,6 +112,23 @@ def payoff_sensitive_basin_sizes(
     return tuple(
         sorted(
             ((attractor, len(initial_profiles)) for attractor, initial_profiles in basins.items()),
+            key=repr,
+        )
+    )
+
+
+def payoff_sensitive_basin_decomposition(
+    game: NormalFormGame,
+) -> tuple[tuple[Attractor, tuple[Profile, ...]], ...]:
+    """Return deterministic max-gain basin decomposition data."""
+
+    basins = deterministic_basins(game, payoff_sensitive_better_response_step)
+    return tuple(
+        sorted(
+            (
+                (attractor, tuple(initial_profiles))
+                for attractor, initial_profiles in basins.items()
+            ),
             key=repr,
         )
     )
@@ -239,6 +267,91 @@ def format_unique_max_flip_comparison(result: UniqueMaxFlipComparison) -> str:
     return "\n".join(lines)
 
 
+def enumerate_two_by_two_graph_classes(
+    payoff_values: Iterable[int] = (-2, -1, 0, 1, 2),
+    max_representatives: int = 5,
+) -> EnumerationSummary:
+    """Exhaustively group 2x2 games by unweighted graph and basin behavior."""
+
+    values = tuple(payoff_values)
+    total_games = len(values) ** 8
+    classes: dict[
+        tuple[tuple[Profile, Profile], ...],
+        dict[
+            str,
+            object,
+        ],
+    ] = {}
+
+    for game in two_by_two_games(values):
+        graph_signature = unweighted_edge_signature(game)
+        basin_signature = payoff_sensitive_basin_decomposition(game)
+        weight_signature = weighted_edge_signature(game)
+        pure_nash_count = len(pure_nash_equilibria(game))
+
+        graph_class = classes.setdefault(
+            graph_signature,
+            {
+                "pure_nash_count": pure_nash_count,
+                "basin_representatives": {},
+            },
+        )
+        basin_representatives = graph_class["basin_representatives"]
+        assert isinstance(basin_representatives, dict)
+        basin_representatives.setdefault(basin_signature, (game, weight_signature))
+
+    varying_classes = [
+        graph_class
+        for graph_class in classes.values()
+        if len(graph_class["basin_representatives"]) > 1
+    ]
+
+    varying_by_sink_count: dict[int, int] = {}
+    representatives: list[GamePairComparison] = []
+    for graph_class in varying_classes:
+        pure_nash_count = graph_class["pure_nash_count"]
+        assert isinstance(pure_nash_count, int)
+        varying_by_sink_count[pure_nash_count] = (
+            varying_by_sink_count.get(pure_nash_count, 0) + 1
+        )
+
+        basin_representatives = graph_class["basin_representatives"]
+        assert isinstance(basin_representatives, dict)
+        if len(representatives) < max_representatives:
+            games = [game for game, _weights in basin_representatives.values()]
+            representatives.append(compare_games(games[0], games[1]))
+
+    return EnumerationSummary(
+        total_games=total_games,
+        distinct_unweighted_graphs=len(classes),
+        varying_dynamics_classes=len(varying_classes),
+        varying_classes_by_sink_count=tuple(sorted(varying_by_sink_count.items())),
+        representative_pairs=tuple(representatives),
+    )
+
+
+def format_enumeration_summary(summary: EnumerationSummary) -> str:
+    """Format an exhaustive enumeration summary."""
+
+    lines = [
+        "Systematic 2x2 enumeration",
+        f"Number of games searched: {summary.total_games}",
+        f"Number of distinct unweighted preference graphs: {summary.distinct_unweighted_graphs}",
+        "Number of graph-equivalence classes containing multiple deterministic max-gain basin decompositions: "
+        f"{summary.varying_dynamics_classes}",
+        f"Varying classes by number of pure Nash sink vertices: {summary.varying_classes_by_sink_count}",
+    ]
+    for index, comparison in enumerate(summary.representative_pairs, start=1):
+        lines.extend(
+            [
+                "",
+                f"Representative example {index}:",
+                format_game_pair_comparison(comparison),
+            ]
+        )
+    return "\n".join(lines)
+
+
 def find_pairs_with_different_payoff_sensitive_basins(
     payoff_values: Iterable[int] = (-2, -1, 0, 1, 2),
     max_pairs: int = 3,
@@ -296,6 +409,5 @@ def format_game_pair_comparison(comparison: GamePairComparison) -> str:
 
 
 if __name__ == "__main__":
-    flip = find_unique_max_flip_pair()
-    if flip is not None:
-        print(format_unique_max_flip_comparison(flip))
+    summary = enumerate_two_by_two_graph_classes(max_representatives=3)
+    print(format_enumeration_summary(summary))
