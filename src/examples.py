@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from .games import NormalFormGame
-from .preference_graphs import graph_summary
+from .preference_graphs import format_preference_graphs
 
 
 def coordination_game() -> NormalFormGame:
@@ -40,5 +40,5 @@ def all_examples() -> list[NormalFormGame]:
 
 if __name__ == "__main__":
     for example in all_examples():
-        print(graph_summary(example))
+        print(format_preference_graphs(example))
         print()

@@ -1,5 +1,6 @@
 from src.examples import coordination_game, prisoners_dilemma
 from src.preference_graphs import (
+    format_preference_graphs,
     preference_graph,
     pure_nash_equilibria,
     weighted_preference_graph,
@@ -43,3 +44,11 @@ def test_prisoners_dilemma_preference_graph() -> None:
     assert pure_nash_equilibria(game) == [("D", "D")]
     assert graph[("C", "C")][("D", "C")]["weight"] == 2
     assert graph[("C", "C")][("C", "D")]["weight"] == 2
+
+
+def test_format_preference_graphs_is_hand_inspectable() -> None:
+    output = format_preference_graphs(coordination_game())
+    assert "Vertices:" in output
+    assert "Unweighted preference graph edges:" in output
+    assert "Weighted preference graph edges:" in output
+    assert "('A', 'B') -> ('A', 'A')  (player 2, weight 2)" in output

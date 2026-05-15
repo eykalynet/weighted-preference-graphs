@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import networkx as nx
 
 from .games import NormalFormGame, Profile
@@ -48,11 +46,38 @@ def pure_nash_equilibria(game: NormalFormGame) -> list[Profile]:
     return [node for node in graph.nodes if graph.out_degree(node) == 0]
 
 
+def format_preference_graphs(game: NormalFormGame) -> str:
+    """Return hand-inspectable unweighted and weighted graph data."""
+
+    unweighted = preference_graph(game)
+    weighted = weighted_preference_graph(game)
+
+    lines = [
+        f"Game: {game.name}",
+        "Vertices:",
+    ]
+    lines.extend(f"  {profile}" for profile in game.profiles())
+
+    lines.append("Unweighted preference graph edges:")
+    for source, target, data in sorted(unweighted.edges(data=True)):
+        player = data["player"] + 1
+        lines.append(f"  {source} -> {target}  (player {player})")
+
+    lines.append("Weighted preference graph edges:")
+    for source, target, data in sorted(weighted.edges(data=True)):
+        player = data["player"] + 1
+        weight = data["weight"]
+        lines.append(f"  {source} -> {target}  (player {player}, weight {weight:g})")
+
+    lines.append(f"Pure Nash equilibria / sink vertices: {pure_nash_equilibria(game)}")
+    return "\n".join(lines)
+
+
 def graph_summary(game: NormalFormGame) -> str:
     """Return a short text summary of the core graph data."""
 
     graph = weighted_preference_graph(game)
-    weights: dict[tuple[Any, Any], float] = {
+    weights: dict[tuple[Profile, Profile], float] = {
         (source, target): data["weight"]
         for source, target, data in graph.edges(data=True)
     }
